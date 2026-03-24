@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Porsche 911 GT3 RS — Engineering distilled to its purest form. 518 HP. 9,000 RPM."/>
+  <meta name="theme-color" content="#030303"/>
+  <title>Porsche 911 GT3 RS | Pure Motorsport</title>
+
+  <!--
+    FONTS
+    Cormorant Garamond  — editorial luxury serif for headlines
+    Syne                — clean geometric sans for UI / body
+    Space Mono          — monospaced for data / labels
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Syne:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+  <style>
+/* ── DESIGN TOKENS ─────────────────────────────────────────────────────
+   Palette derived directly from the GT3 RS studio image:
+     · Background: true studio black  #030303
+     · Car body:   cool white         #f4f4f2
+     · Accent:     Porsche brake red  #C8001A
+     · Mid-tones:  various opacities of white only — no gold, no colour noise
+   Typography inspiration from ascendmarketing.xyz:
+     · Large, confident display type that owns the screen
+     · Generous whitespace
+     · Minimal UI chrome — everything in service of the content
+──────────────────────────────────────────────────────────────────────── */
+:root {
+  --K:        #030303;    /* studio black  */
+  --K2:       #0a0a0a;
+  --K3:       #131313;
+  --K4:       #1c1c1c;
+  --R:        #C8001A;    /* Porsche red   */
+  --Rs:       rgba(200,0,26,.14);
+  --W:        #f4f4f2;    /* cool white    */
+  --W70:      rgba(244,244,242,.70);
+  --W40:      rgba(244,244,242,.40);
+  --W15:      rgba(244,244,242,.15);
+  --W08:      rgba(244,244,242,.08);
+  --W04:      rgba(244,244,242,.04);
+  --serif:    'Cormorant Garamond', Georgia, serif;
+  --sans:     'Syne', sans-serif;
+  --mono:     'Space Mono', monospace;
+  --ease:     cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:auto}
+body{
+  background:var(--K);
+  color:var(--W);
+  font-family:var(--sans);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  cursor:none;
+}
+a{color:inherit;text-decoration:none}
+
+/* ── CURSOR ──────────────────────────────────────────────────────────── */
+#cd{
+  position:fixed;pointer-events:none;z-index:99999;
+  width:7px;height:7px;border-radius:50%;background:var(--W);
+  transform:translate(-50%,-50%);
+  transition:width .25s var(--ease),height .25s var(--ease),background .25s;
+}
+#cr{
+  position:fixed;pointer-events:none;z-index:99998;
+  width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--W40);
+  transform:translate(-50%,-50%);
+  transition:width .4s var(--ease),height .4s var(--ease),border-color .3s;
+}
+body.h-link #cd{background:var(--R);width:5px;height:5px}
+body.h-link #cr{width:48px;height:48px;border-color:rgba(200,0,26,.6)}
+
+/* ── BACKGROUND ──────────────────────────────────────────────────────── */
+#bg{position:fixed;inset:0;z-index:0;pointer-events:none}
+#bgCanvas{width:100%;height:100%}
+/* Studio-black letterbox/vignette mimicking the image backdrop */
+#bg::after{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 75% 65% at 50% 45%, transparent 35%, rgba(3,3,3,.72) 100%),
+    linear-gradient(to bottom, rgba(3,3,3,.55) 0%, transparent 18%, transparent 80%, rgba(3,3,3,.65) 100%);
+  z-index:1;
+}
+#grain{
+  position:fixed;inset:0;z-index:9000;pointer-events:none;opacity:.038;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── LOADER ──────────────────────────────────────────────────────────── */
+#loader{
+  position:fixed;inset:0;z-index:999999;
+  background:var(--K);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .9s var(--ease),visibility .9s;
+}
+#loader.out{opacity:0;visibility:hidden}
+
+.ld-icon{
+  width:64px;height:64px;
+  animation:ld-pulse 2s ease-in-out infinite;
+}
+@keyframes ld-pulse{
+  0%,100%{opacity:.5;transform:scale(1)}
+  50%{opacity:1;transform:scale(1.06)}
+}
+.ld-name{
+  margin-top:2rem;
+  font-family:var(--serif);font-weight:300;font-size:2.6rem;
+  letter-spacing:.18em;color:var(--W);line-height:1;
+}
+.ld-model{
+  margin-top:.35rem;
+  font-family:var(--mono);font-size:.6rem;
+  letter-spacing:.5em;text-transform:uppercase;
+  color:var(--W40);
+}
+.ld-bar{
+  width:200px;height:1px;background:var(--W08);
+  margin-top:2.2rem;position:relative;overflow:hidden;
+}
+.ld-fill{
+  position:absolute;left:0;top:0;height:100%;width:0%;
+  background:var(--R);
+  transition:width .35s ease;
+}
+.ld-pct{
+  margin-top:.7rem;
+  font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.3em;color:var(--W40);
+}
+
+/* ── NAV ─────────────────────────────────────────────────────────────── */
+#nav{
+  position:fixed;top:0;left:0;right:0;z-index:5000;
+  padding:2rem 3.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+/* Invisible fade so nav doesn't need a background bar */
+#nav::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to bottom,rgba(3,3,3,.6) 0%,transparent 100%);
+  pointer-events:none;
+}
+.nav-logo{
+  font-family:var(--serif);font-weight:300;
+  font-size:1.5rem;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--W);
+  position:relative;z-index:1;
+}
+.nav-logo sup{
+  font-family:var(--mono);font-size:.45rem;
+  letter-spacing:.1em;color:var(--R);
+  vertical-align:super;margin-left:2px;
+}
+.nav-links{
+  display:flex;gap:2.8rem;
+  position:relative;z-index:1;
+}
+.nav-link{
+  font-family:var(--mono);font-size:.58rem;
+  letter-spacing:.3em;text-transform:uppercase;
+  color:var(--W40);
+  transition:color .25s;
+  position:relative;
+}
+.nav-link::after{
+  content:'';position:absolute;bottom:-3px;left:0;
+  width:0;height:1px;background:var(--R);
+  transition:width .35s var(--ease);
+}
+.nav-link:hover{color:var(--W)}
+.nav-link:hover::after{width:100%}
+
+/* hamburger — visible on mobile */
+.nav-ham{
+  display:none;flex-direction:column;gap:5px;padding:4px;
+  background:none;border:none;cursor:none;
+  position:relative;z-index:1;
+}
+.nav-ham span{
+  display:block;width:22px;height:1px;
+  background:var(--W);
+  transition:all .4s var(--ease);
+}
+.nav-ham.open span:nth-child(1){transform:rotate(45deg) translate(4px,4px)}
+.nav-ham.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.nav-ham.open span:nth-child(3){transform:rotate(-45deg) translate(4px,-4px)}
+
+/* ── FULLSCREEN MENU ─────────────────────────────────────────────────── */
+#menu{
+  position:fixed;inset:0;z-index:4999;
+  background:rgba(3,3,3,.97);
+  backdrop-filter:blur(28px);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:.4rem;
+  opacity:0;visibility:hidden;
+  transition:opacity .45s var(--ease),visibility .45s;
+}
+#menu.open{opacity:1;visibility:visible}
+
+.mi{overflow:hidden}
+.mi a{
+  display:flex;flex-direction:column;align-items:center;
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(2.4rem,7vw,5rem);
+  letter-spacing:.04em;
+  color:var(--W15);
+  transform:translateY(110%);
+  transition:color .35s,transform .65s var(--ease);
+}
+#menu.open .mi a{transform:translateY(0)}
+#menu.open .mi:nth-child(1) a{transition-delay:.06s}
+#menu.open .mi:nth-child(2) a{transition-delay:.11s}
+#menu.open .mi:nth-child(3) a{transition-delay:.16s}
+#menu.open .mi:nth-child(4) a{transition-delay:.21s}
+#menu.open .mi:nth-child(5) a{transition-delay:.26s}
+.mi a:hover{color:var(--W)}
+.mi-tag{
+  font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.4em;text-transform:uppercase;
+  color:var(--R);margin-top:.2rem;
+  transition:none;
+}
+.menu-rule{
+  width:1px;height:50px;
+  background:linear-gradient(to bottom,transparent,var(--W15),transparent);
+  margin:1rem 0;
+}
+
+/* ── CONTENT ─────────────────────────────────────────────────────────── */
+#content{position:relative;z-index:10}
+
+/* ── HERO ─────────────────────────────────────────────────────────────── */
+#hero{
+  min-height:100vh;
+  display:grid;
+  grid-template-rows:1fr auto;
+  padding:0 3.5rem;
+}
+.hero-body{
+  display:flex;flex-direction:column;
+  justify-content:flex-end;
+  padding-bottom:5.5rem;
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:.9rem;
+  margin-bottom:1.8rem;
+}
+.hero-eyebrow-line{width:32px;height:1px;background:var(--R)}
+.hero-eyebrow-text{
+  font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.5em;text-transform:uppercase;color:var(--R);
+}
+.hero-h1{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(4.5rem,16vw,14rem);
+  line-height:.92;letter-spacing:-.01em;
+  color:var(--W);
+  margin-bottom:1rem;
+}
+.hero-h1 em{
+  display:block;
+  font-style:italic;font-weight:300;
+  font-size:.22em;letter-spacing:.06em;
+  color:var(--W40);
+  margin-top:1.2rem;
+}
+.hero-copy{
+  max-width:420px;
+  font-size:.88rem;line-height:1.85;
+  color:var(--W40);
+  margin-bottom:2.8rem;
+}
+/* Dual CTA row */
+.hero-actions{display:flex;align-items:center;gap:1.6rem;flex-wrap:wrap}
+.btn-primary{
+  font-family:var(--mono);font-size:.58rem;
+  letter-spacing:.35em;text-transform:uppercase;
+  padding:.95rem 2.2rem;
+  background:var(--R);color:var(--W);
+  border:1px solid var(--R);
+  transition:background .3s,color .3s;
+  display:inline-block;
+}
+.btn-primary:hover{background:transparent;color:var(--R)}
+.btn-ghost{
+  font-family:var(--mono);font-size:.58rem;
+  letter-spacing:.35em;text-transform:uppercase;
+  padding:.95rem 2.2rem;
+  background:transparent;color:var(--W40);
+  border:1px solid var(--W15);
+  transition:border-color .3s,color .3s;
+  display:inline-block;
+}
+.btn-ghost:hover{border-color:var(--W40);color:var(--W)}
+
+/* Floating scroll arrow — right side */
+.hero-scroll{
+  position:absolute;right:3.5rem;bottom:5.5rem;
+  display:flex;flex-direction:column;align-items:center;gap:.7rem;
+}
+.hs-label{
+  writing-mode:vertical-rl;
+  font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.45em;text-transform:uppercase;
+  color:var(--W15);
+}
+.hs-line{
+  width:1px;height:72px;
+  background:var(--W08);
+  position:relative;overflow:hidden;
+}
+.hs-line::after{
+  content:'';position:absolute;left:0;top:0;
+  width:100%;height:35%;background:var(--R);
+  animation:drip 2.6s ease-in-out infinite;
+}
+@keyframes drip{
+  0%{transform:translateY(-100%)}
+  100%{transform:translateY(320%)}
+}
+
+/* Bottom stat strip */
+.hero-strip{
+  border-top:1px solid var(--W08);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  padding:.1rem 0;
+}
+.hs-cell{
+  padding:1.4rem 0;
+  border-right:1px solid var(--W08);
+  text-align:center;
+  transition:background .35s;
+}
+.hs-cell:last-child{border-right:none}
+.hs-cell:hover{background:var(--W04)}
+.hs-val{
+  font-family:var(--serif);font-size:2.2rem;font-weight:300;
+  color:var(--W);line-height:1;
+}
+.hs-unit{
+  font-family:var(--mono);font-size:.55rem;
+  color:var(--R);margin-left:3px;
+}
+.hs-lbl{
+  font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.25em;text-transform:uppercase;
+  color:var(--W40);margin-top:.4rem;
+}
+
+/* ── SECTION CHROME ──────────────────────────────────────────────────── */
+.panel{
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:7rem 3.5rem;
+}
+.panel-inner{max-width:1020px;width:100%}
+
+.sec-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:3rem;
+  padding-bottom:1.5rem;
+  border-bottom:1px solid var(--W08);
+}
+.sec-tag{
+  font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.45em;text-transform:uppercase;
+  color:var(--R);
+  display:flex;align-items:center;gap:.8rem;
+}
+.sec-tag::before{content:'';display:block;width:28px;height:1px;background:var(--R)}
+.sec-n{
+  font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.2em;color:var(--W15);
+}
+
+.sec-h{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(2.8rem,7vw,6rem);
+  line-height:.97;letter-spacing:.01em;
+  color:var(--W);margin-bottom:1.4rem;
+}
+.sec-h em{
+  font-style:italic;color:var(--W40);
+  font-size:.62em;display:block;margin-top:.4rem;
+}
+.sec-p{
+  font-size:.88rem;line-height:1.9;
+  color:var(--W40);max-width:540px;
+  margin-bottom:3rem;
+}
+
+/* ── SPECS GRID ──────────────────────────────────────────────────────── */
+.specs-wrap{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;background:var(--W08);
+  margin-top:2.5rem;
+}
+.sc{
+  background:var(--K2);
+  padding:2.8rem 1.6rem;
+  text-align:center;
+  position:relative;overflow:hidden;
+  transition:background .35s;
+}
+.sc::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--R);transform:scaleX(0);
+  transition:transform .4s var(--ease);
+  transform-origin:left;
+}
+.sc:hover{background:var(--K3)}
+.sc:hover::after{transform:scaleX(1)}
+.sc-v{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(2.2rem,4.5vw,3.4rem);
+  line-height:1;color:var(--W);margin-bottom:.5rem;
+}
+.sc-u{
+  font-family:var(--mono);font-size:.6rem;
+  color:var(--R);margin-left:2px;
+}
+.sc-l{
+  font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:var(--W40);
+}
+.sc-s{
+  font-family:var(--mono);font-size:.5rem;
+  color:var(--W15);margin-top:.25rem;
+}
+
+/* ── ENGINEERING LIST ────────────────────────────────────────────────── */
+.eng-table{margin-top:2.5rem}
+.et-row{
+  display:grid;
+  grid-template-columns:3rem 1fr 1fr auto;
+  gap:2rem;align-items:start;
+  padding:2rem 0;
+  border-top:1px solid var(--W08);
+  transition:background .3s;
+}
+.et-row:last-child{border-bottom:1px solid var(--W08)}
+.et-row:hover{background:var(--W04);padding-left:.6rem;padding-right:.6rem;margin:0 -.6rem}
+.et-i{
+  font-family:var(--mono);font-size:.55rem;
+  letter-spacing:.1em;color:var(--R);padding-top:.3rem;
+}
+.et-title{
+  font-family:var(--serif);font-weight:400;
+  font-size:clamp(1.2rem,2.2vw,1.7rem);
+  line-height:1.15;color:var(--W);
+}
+.et-desc{
+  font-family:var(--sans);font-size:.82rem;
+  line-height:1.8;color:var(--W40);
+}
+.et-tag{
+  font-family:var(--mono);font-size:.5rem;
+  letter-spacing:.25em;text-transform:uppercase;
+  color:var(--W15);
+  white-space:nowrap;padding-top:.3rem;
+  text-align:right;
+}
+
+/* ── GALLERY ─────────────────────────────────────────────────────────── */
+.gallery-mosaic{
+  display:grid;
+  grid-template-columns:1.6fr 1fr;
+  grid-template-rows:auto auto;
+  gap:1px;background:var(--W08);
+  margin-top:2.5rem;
+}
+.gm-cell{
+  background:var(--K2);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:.6rem;
+  position:relative;overflow:hidden;
+  transition:background .35s;
+  min-height:220px;
+}
+.gm-cell.span2{grid-row:span 2;min-height:440px}
+.gm-cell:hover{background:var(--K3)}
+/* Red corner accent */
+.gm-cell::before{
+  content:'';position:absolute;top:0;left:0;
+  width:0;height:0;
+  border-style:solid;
+  border-width:32px 32px 0 0;
+  border-color:var(--R) transparent transparent transparent;
+  opacity:0;transition:opacity .3s;
+}
+.gm-cell:hover::before{opacity:1}
+.gm-icon{width:36px;height:36px;opacity:.12;color:var(--W)}
+.gm-lbl{
+  font-family:var(--mono);font-size:.54rem;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--W40);
+}
+.gm-sub{
+  font-family:var(--mono);font-size:.48rem;
+  letter-spacing:.2em;color:var(--W15);
+}
+.gallery-cta{margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap}
+
+/* ── CONFIGURE ───────────────────────────────────────────────────────── */
+.config-block{
+  margin-top:2.5rem;
+  border:1px solid var(--W08);
+  position:relative;overflow:hidden;
+  padding:5rem 4rem;
+  text-align:center;
+}
+/* Top red gradient line (like ascend's accent bar) */
+.config-block::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,var(--R) 40%,var(--R) 60%,transparent 100%);
+}
+.config-big{
+  font-family:var(--serif);font-weight:300;
+  font-size:clamp(4rem,12vw,10rem);
+  letter-spacing:.04em;line-height:.9;
+  color:var(--W);margin-bottom:1.5rem;
+}
+.config-big em{
+  font-style:italic;font-size:.45em;
+  color:var(--W40);display:block;margin-top:.5rem;
+}
+.config-p{
+  font-size:.88rem;line-height:1.85;
+  color:var(--W40);max-width:380px;
+  margin:0 auto 2.5rem;
+}
+
+/* ── FOOTER ──────────────────────────────────────────────────────────── */
+#footer{
+  position:relative;z-index:10;
+  border-top:1px solid var(--W08);
+  padding:4rem 3.5rem 3.5rem;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:3rem;align-items:end;
+}
+.f-logo{
+  font-family:var(--serif);font-weight:300;
+  font-size:2rem;letter-spacing:.25em;
+  text-transform:uppercase;color:var(--W);
+}
+.f-logo span{color:var(--R)}
+.f-tagline{
+  font-family:var(--serif);font-style:italic;
+  font-size:.9rem;color:var(--W40);
+  margin-top:.6rem;
+}
+.f-nav{
+  display:flex;flex-direction:column;gap:.7rem;
+  align-items:center;text-align:center;
+}
+.f-nav a{
+  font-family:var(--mono);font-size:.54rem;
+  letter-spacing:.25em;text-transform:uppercase;
+  color:var(--W40);transition:color .25s;
+}
+.f-nav a:hover{color:var(--W)}
+.f-copy{
+  font-family:var(--mono);font-size:.52rem;
+  letter-spacing:.18em;color:var(--W15);
+  text-align:right;
+  line-height:1.8;
+}
+
+/* ── REVEAL ──────────────────────────────────────────────────────────── */
+.rv{opacity:0;transform:translateY(26px)}
+.rv.in{opacity:1;transform:translateY(0);transition:opacity .85s var(--ease),transform .85s var(--ease)}
+.rv.d1.in{transition-delay:.1s}
+.rv.d2.in{transition-delay:.2s}
+.rv.d3.in{transition-delay:.3s}
+.rv.d4.in{transition-delay:.4s}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────── */
+@media(max-width:960px){
+  .specs-wrap{grid-template-columns:repeat(2,1fr)}
+  .et-row{grid-template-columns:2.5rem 1fr;gap:1rem}
+  .et-desc,.et-tag{display:none}
+  .gallery-mosaic{grid-template-columns:1fr}
+  .gm-cell.span2{grid-row:auto;min-height:220px}
+  #footer{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  .f-copy{grid-column:span 2;text-align:left}
+}
+@media(max-width:640px){
+  #nav{padding:1.4rem 1.5rem}
+  .nav-links{display:none}
+  .nav-ham{display:flex}
+  #hero{padding:0 1.5rem}
+  .hero-scroll{display:none}
+  .hero-strip{grid-template-columns:repeat(2,1fr)}
+  .hs-cell:nth-child(2){border-right:none}
+  .panel{padding:5rem 1.5rem}
+  .specs-wrap{grid-template-columns:1fr 1fr}
+  .config-block{padding:3rem 1.5rem}
+  #footer{grid-template-columns:1fr;padding:3rem 1.5rem 2.5rem}
+  .f-copy{grid-column:1;text-align:left}
+  .f-nav{align-items:flex-start}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    transition-duration:.01ms!important;
+  }
+}
+  </style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div id="cd"></div>
+<div id="cr"></div>
+
+<!-- BG Canvas -->
+<div id="bg"><canvas id="bgCanvas"></canvas></div>
+<div id="grain"></div>
+
+<!-- ── LOADER ──────────────────────────────────────────── -->
+<div id="loader">
+  <!-- Minimal Porsche crest — white on black, matching the car image -->
+  <svg class="ld-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="40" r="37" stroke="rgba(244,244,242,.7)" stroke-width="1.2"/>
+    <circle cx="40" cy="40" r="27" stroke="rgba(244,244,242,.2)" stroke-width=".8"/>
+    <!-- Rearing horse silhouette (simplified Porsche crest centre) -->
+    <path d="M40 20 L44 33 L57 33 L47 41 L51 54 L40 46 L29 54 L33 41 L23 33 L36 33 Z"
+          fill="rgba(244,244,242,.8)"/>
+    <path d="M40 30 L42.4 37.4 L50 37.4 L44 42 L46 49 L40 45 L34 49 L36 42 L30 37.4 L37.6 37.4 Z"
+          fill="#C8001A"/>
+  </svg>
+  <div class="ld-name">Porsche</div>
+  <div class="ld-model">911 GT3 RS &nbsp;·&nbsp; Loading Experience</div>
+  <div class="ld-bar"><div class="ld-fill" id="ldFill"></div></div>
+  <div class="ld-pct" id="ldPct">0%</div>
+</div>
+
+<!-- ── NAV ─────────────────────────────────────────────── -->
+<nav id="nav">
+  <a href="#hero" class="nav-logo">Porsche<sup>911</sup></a>
+  <div class="nav-links">
+    <a href="#specs"       class="nav-link">Specs</a>
+    <a href="#engineering" class="nav-link">Engineering</a>
+    <a href="#gallery"     class="nav-link">Gallery</a>
+    <a href="#configure"   class="nav-link">Configure</a>
+  </div>
+  <button class="nav-ham" id="navHam" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- ── FULLSCREEN MENU ─────────────────────────────────── -->
+<div id="menu">
+  <div class="menu-rule"></div>
+  <div class="mi"><a href="#hero">        <span class="mi-tag">01 — Intro</span>GT3 RS</a></div>
+  <div class="mi"><a href="#specs">       <span class="mi-tag">02 — Numbers</span>Specifications</a></div>
+  <div class="mi"><a href="#engineering"> <span class="mi-tag">03 — Technology</span>Engineering</a></div>
+  <div class="mi"><a href="#gallery">     <span class="mi-tag">04 — Visual</span>Gallery</a></div>
+  <div class="mi"><a href="#configure">   <span class="mi-tag">05 — Yours</span>Configure</a></div>
+  <div class="menu-rule"></div>
+</div>
+
+<!-- ── CONTENT ─────────────────────────────────────────── -->
+<main id="content">
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-body">
+      <div class="hero-eyebrow rv">
+        <div class="hero-eyebrow-line"></div>
+        <span class="hero-eyebrow-text">The Ultimate 911 — 2025</span>
+      </div>
+      <h1 class="hero-h1 rv d1">
+        GT3 RS
+        <em>Engineering art, deconstructed.</em>
+      </h1>
+      <p class="hero-copy rv d2">
+        Scroll to reveal every component of our motorsport-derived
+        masterpiece. 518&nbsp;HP. 9,000&nbsp;RPM. No substitutes.
+      </p>
+      <div class="hero-actions rv d3">
+        <a href="#specs" class="btn-primary">Deconstruct</a>
+        <a href="#configure" class="btn-ghost">Configure</a>
+      </div>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="hero-scroll">
+      <span class="hs-label">Scroll</span>
+      <div class="hs-line"></div>
+    </div>
+
+    <!-- Stat strip -->
+    <div class="hero-strip rv d4">
+      <div class="hs-cell">
+        <div class="hs-val">518<span class="hs-unit">hp</span></div>
+        <div class="hs-lbl">Power</div>
+      </div>
+      <div class="hs-cell">
+        <div class="hs-val">3.2<span class="hs-unit">s</span></div>
+        <div class="hs-lbl">0 – 60&nbsp;mph</div>
+      </div>
+      <div class="hs-cell">
+        <div class="hs-val">184<span class="hs-unit">mph</span></div>
+        <div class="hs-lbl">Top Speed</div>
+      </div>
+      <div class="hs-cell">
+        <div class="hs-val">4.0<span class="hs-unit">L</span></div>
+        <div class="hs-lbl">Flat-Six NA</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPECS -->
+  <section class="panel" id="specs">
+    <div class="panel-inner">
+      <div class="sec-row rv">
+        <span class="sec-tag">Specifications</span>
+        <span class="sec-n">02 / 05</span>
+      </div>
+      <h2 class="sec-h rv d1">Numbers That<br>Define Excellence
+        <em>Proof of motorsport DNA</em>
+      </h2>
+      <p class="sec-p rv d2">
+        Every metric is a testament to uncompromising engineering.
+        These aren't benchmarks — they're declarations.
+      </p>
+      <div class="specs-wrap rv d3">
+        <div class="sc">
+          <div class="sc-v">518<span class="sc-u">hp</span></div>
+          <div class="sc-l">Maximum Power</div>
+          <div class="sc-s">at 8,500 RPM</div>
+        </div>
+        <div class="sc">
+          <div class="sc-v">3.2<span class="sc-u">s</span></div>
+          <div class="sc-l">0 – 60 MPH</div>
+          <div class="sc-s">Launch Control</div>
+        </div>
+        <div class="sc">
+          <div class="sc-v">184<span class="sc-u">mph</span></div>
+          <div class="sc-l">Top Speed</div>
+          <div class="sc-s">Electronically Ltd</div>
+        </div>
+        <div class="sc">
+          <div class="sc-v">4.0<span class="sc-u">L</span></div>
+          <div class="sc-l">Flat-Six</div>
+          <div class="sc-s">Naturally Aspirated</div>
+        </div>
+        <div class="sc">
+          <div class="sc-v">9K<span class="sc-u">rpm</span></div>
+          <div class="sc-l">Redline</div>
+          <div class="sc-s">Individual Throttle Bodies</div>
+        </div>
+        <div class="sc">
+          <div class="sc-v">465<span class="sc-u">kg</span></div>
+          <div class="sc-l">Downforce</div>
+          <div class="sc-s">at 200 km/h</div>
+        </div>
+        <div class="sc">
+          <div class="sc-v">1430<span class="sc-u">kg</span></div>
+          <div class="sc-l">Dry Weight</div>
+          <div class="sc-s">CFRP / Aluminium</div>
+        </div>
+        <div class="sc">
+          <div class="sc-v">7<span class="sc-u">spd</span></div>
+          <div class="sc-l">PDK Gearbox</div>
+          <div class="sc-s">Dual Clutch</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ENGINEERING -->
+  <section class="panel" id="engineering">
+    <div class="panel-inner">
+      <div class="sec-row rv">
+        <span class="sec-tag">Engineering</span>
+        <span class="sec-n">03 / 05</span>
+      </div>
+      <h2 class="sec-h rv d1">Motorsport<br>Technology
+        <em>Born at the Nürburgring</em>
+      </h2>
+      <p class="sec-p rv d2">
+        Perfected through relentless testing. Every component serves one
+        singular purpose: unparalleled performance.
+      </p>
+      <div class="eng-table rv d3">
+        <div class="et-row">
+          <span class="et-i">01</span>
+          <div class="et-title">Naturally Aspirated Flat-Six</div>
+          <div class="et-desc">4.0 L with individual throttle valves, 9,000 RPM redline, and a sound that defines what an engine should feel like.</div>
+          <span class="et-tag">Engine</span>
+        </div>
+        <div class="et-row">
+          <span class="et-i">02</span>
+          <div class="et-title">Active Aerodynamics</div>
+          <div class="et-desc">DRS-equipped rear wing and adaptive front diffuser optimise downforce dynamically for every condition.</div>
+          <span class="et-tag">Aero</span>
+        </div>
+        <div class="et-row">
+          <span class="et-i">03</span>
+          <div class="et-title">Rear-Axle Steering</div>
+          <div class="et-desc">Enhances agility at low speed. Delivers stability at the limit. The track advantage you feel from the first corner.</div>
+          <span class="et-tag">Chassis</span>
+        </div>
+        <div class="et-row">
+          <span class="et-i">04</span>
+          <div class="et-title">PDK Transmission</div>
+          <div class="et-desc">7-speed dual-clutch with sub-100ms shifts. Launch Control optimised for maximum off-the-line acceleration.</div>
+          <span class="et-tag">Drivetrain</span>
+        </div>
+        <div class="et-row">
+          <span class="et-i">05</span>
+          <div class="et-title">Carbon Fibre Construction</div>
+          <div class="et-desc">CFRP bonnet, roof, and aerodynamic elements. Maximum torsional rigidity, minimum mass penalty.</div>
+          <span class="et-tag">Structure</span>
+        </div>
+        <div class="et-row">
+          <span class="et-i">06</span>
+          <div class="et-title">Manthey Performance Kit</div>
+          <div class="et-desc">Track-tuned suspension geometry, adjustable dampers, and competition-derived chassis setup.</div>
+          <span class="et-tag">Track</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="panel" id="gallery">
+    <div class="panel-inner">
+      <div class="sec-row rv">
+        <span class="sec-tag">Gallery</span>
+        <span class="sec-n">04 / 05</span>
+      </div>
+      <h2 class="sec-h rv d1">Sculpted<br>by Air
+        <em>Form follows function</em>
+      </h2>
+      <p class="sec-p rv d2">
+        Every curve, every vent, every surface serves a purpose.
+        Aerodynamic intent expressed as visual language.
+      </p>
+      <div class="gallery-mosaic rv d3">
+        <div class="gm-cell span2">
+          <!-- Image placeholder SVG -->
+          <svg class="gm-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="2" y="2" width="32" height="32" rx="2"/>
+            <circle cx="13" cy="12" r="3.5"/>
+            <path d="M2 24 l8-8 6 6 5-5 13 11"/>
+          </svg>
+          <span class="gm-lbl">Exterior — Side Profile</span>
+          <span class="gm-sub">GT3 RS · Carrara White Metallic</span>
+        </div>
+        <div class="gm-cell">
+          <svg class="gm-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="2" y="2" width="32" height="32" rx="2"/>
+            <circle cx="13" cy="12" r="3.5"/>
+            <path d="M2 24 l8-8 6 6 5-5 13 11"/>
+          </svg>
+          <span class="gm-lbl">Rear Wing — DRS Active</span>
+        </div>
+        <div class="gm-cell">
+          <svg class="gm-icon" viewBox="0 0 36 36" fill="none" stroke="currentColor" stroke-width="1">
+            <rect x="2" y="2" width="32" height="32" rx="2"/>
+            <circle cx="13" cy="12" r="3.5"/>
+            <path d="M2 24 l8-8 6 6 5-5 13 11"/>
+          </svg>
+          <span class="gm-lbl">Interior — Sport Seats</span>
+        </div>
+      </div>
+      <div class="gallery-cta rv d4">
+        <a href="#" class="btn-primary">Full Gallery</a>
+        <a href="#" class="btn-ghost">360° Viewer</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONFIGURE -->
+  <section class="panel" id="configure">
+    <div class="panel-inner">
+      <div class="sec-row rv">
+        <span class="sec-tag">Configure</span>
+        <span class="sec-n">05 / 05</span>
+      </div>
+      <h2 class="sec-h rv d1">Make It<br>Yours
+        <em>Every GT3 RS is unique</em>
+      </h2>
+      <p class="sec-p rv d2">
+        Choose from exclusive paint colours, interior packages, and
+        performance options. Over 10,000 combinations await.
+      </p>
+      <div class="config-block rv d3">
+        <div class="config-big">Configure
+          <em>Your 911. No one else's.</em>
+        </div>
+        <p class="config-p">
+          Exclusive Porsche Exclusive Manufaktur options available.
+          Speak to a specialist or begin online.
+        </p>
+        <a href="#" class="btn-primary">Start Configuration</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── FOOTER ───────────────────────────────────────────── -->
+<footer id="footer">
+  <div>
+    <div class="f-logo">Porsche<span>.</span></div>
+    <div class="f-tagline">There is no substitute.</div>
+  </div>
+  <nav class="f-nav">
+    <a href="#">911 GT3 RS</a>
+    <a href="#">Specifications</a>
+    <a href="#">Configurator</a>
+    <a href="#">Motorsport</a>
+    <a href="#">Dealer Finder</a>
+  </nav>
+  <div class="f-copy">
+    &copy; 2025 Porsche AG.<br>All rights reserved.
+  </div>
+</footer>
+
+
+<!-- ── SCRIPTS ──────────────────────────────────────────── -->
+<script>
+/* ── CONFIG ──────────────────────────────────── */
+const CFG = {
+  totalFrames:  151,
+  prefix:       'ezgif-frame-',
+  ext:          '.jpg',
+  pad:          3,
+  mobileSkip:   3,
+  desktopSkip:  1,
+};
+const ST = { frames:[], loaded:0, mobile:false, canvas:null, ctx:null };
+
+/* ── CURSOR ──────────────────────────────────── */
+(()=>{
+  const dot  = document.getElementById('cd');
+  const ring = document.getElementById('cr');
+  let mx=-100, my=-100, rx=-100, ry=-100;
+  document.addEventListener('mousemove', e=>{ mx=e.clientX; my=e.clientY; });
+  (function loop(){
+    rx += (mx-rx)*.13; ry += (my-ry)*.13;
+    dot.style.cssText  = `left:${mx}px;top:${my}px`;
+    ring.style.cssText = `left:${rx}px;top:${ry}px`;
+    requestAnimationFrame(loop);
+  })();
+  document.querySelectorAll('a,button,.sc,.et-row,.gm-cell').forEach(el=>{
+    el.addEventListener('mouseenter',()=>document.body.classList.add('h-link'));
+    el.addEventListener('mouseleave',()=>document.body.classList.remove('h-link'));
+  });
+})();
+
+/* ── LENIS ───────────────────────────────────── */
+let lenis;
+(function tryLenis(){
+  if(typeof Lenis==='undefined'){setTimeout(tryLenis,50);return;}
+  const m = window.innerWidth<=768;
+  lenis = new Lenis({
+    duration: m?1.2:1.6,
+    easing: t=>Math.min(1,1.001-Math.pow(2,-10*t)),
+    smooth:true, smoothTouch:m, touchMultiplier:m?1.5:2,
+  });
+  (function raf(t){lenis.raf(t);requestAnimationFrame(raf);})(0);
+  window._lenis = lenis;
+})();
+
+/* ── HELPERS ─────────────────────────────────── */
+function pad(n){return String(n).padStart(CFG.pad,'0');}
+function fp(n){return`./`+CFG.prefix+pad(n)+CFG.ext;}
+function setProgress(p){
+  document.getElementById('ldFill').style.width=p+'%';
+  document.getElementById('ldPct').textContent=Math.round(p)+'%';
+}
+
+/* ── FRAME LOADING ───────────────────────────── */
+function loadFrame(n){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{ST.loaded++;setProgress(ST.loaded/ST.frames.length*100);res(img);};
+    img.onerror=()=>res(null);
+    img.src=fp(n);
+  });
+}
+async function loadFrames(){
+  const mob=window.innerWidth<=768||/Android|iPhone|iPad/i.test(navigator.userAgent);
+  ST.mobile=mob;
+  const skip=mob?CFG.mobileSkip:CFG.desktopSkip;
+  const nums=Array.from({length:Math.ceil(CFG.totalFrames/skip)},(_,i)=>i*skip+1);
+  ST.frames=new Array(nums.length).fill(null);
+  const cut=mob?18:28;
+  const first=nums.slice(0,cut), rest=nums.slice(cut);
+  const init=await Promise.all(first.map(loadFrame));
+  init.forEach((img,i)=>{ST.frames[i]=img;});
+  setTimeout(()=>document.getElementById('loader').classList.add('out'),350);
+  const chunk=mob?8:14;
+  for(let i=0;i<rest.length;i+=chunk){
+    const imgs=await Promise.all(rest.slice(i,i+chunk).map(loadFrame));
+    imgs.forEach((img,j)=>{ST.frames[cut+i+j]=img;});
+    await new Promise(r=>setTimeout(r,0));
+  }
+}
+
+/* ── CANVAS ──────────────────────────────────── */
+function setupCanvas(){
+  const c=document.getElementById('bgCanvas');
+  ST.canvas=c; ST.ctx=c.getContext('2d');
+  function resize(){
+    const dpr=window.devicePixelRatio||1;
+    c.width=innerWidth*dpr; c.height=innerHeight*dpr;
+    c.style.width=innerWidth+'px'; c.style.height=innerHeight+'px';
+    ST.ctx.scale(dpr,dpr);
+    if(ST.frames[0])drawFrame(0);
+  }
+  resize();
+  window.addEventListener('resize',resize);
+}
+function drawFrame(p){
+  const{ctx,canvas,frames}=ST;
+  if(!ctx||!frames.length)return;
+  const tot=frames.length-1, fi=p*tot;
+  const lo=Math.floor(fi), hi=Math.min(lo+1,tot), bl=fi-lo;
+  const A=frames[lo], B=frames[hi];
+  if(!A)return;
+  const iW=A.naturalWidth||A.width, iH=A.naturalHeight||A.height;
+  const cW=innerWidth, cH=innerHeight;
+  const ir=iW/iH, cr=cW/cH;
+  let dw,dh,ox,oy;
+  if(ir>cr){dh=cH;dw=iW*(cH/iH);ox=(cW-dw)/2;oy=0;}
+  else{dw=cW;dh=iH*(cW/iW);ox=0;oy=(cH-dh)/2;}
+  ctx.clearRect(0,0,cW,cH);
+  ctx.drawImage(A,ox,oy,dw,dh);
+  if(B&&bl>0){ctx.globalAlpha=bl;ctx.drawImage(B,ox,oy,dw,dh);ctx.globalAlpha=1;}
+}
+
+/* ── SCROLL SCRUB ────────────────────────────── */
+function initScrub(){
+  if(typeof gsap==='undefined'||typeof ScrollTrigger==='undefined'){setTimeout(initScrub,50);return;}
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.to({p:0},{p:1,ease:'none',
+    scrollTrigger:{trigger:'#content',start:'top top',end:'bottom bottom',scrub:.4},
+    onUpdate(){drawFrame(this.progress());}
+  });
+}
+
+/* ── MENU ────────────────────────────────────── */
+function initMenu(){
+  const ham=document.getElementById('navHam');
+  const menu=document.getElementById('menu');
+  ham.addEventListener('click',()=>{
+    const o=!menu.classList.contains('open');
+    ham.classList.toggle('open');
+    menu.classList.toggle('open');
+    document.body.style.overflow=o?'hidden':'';
+  });
+  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
+    ham.classList.remove('open');
+    menu.classList.remove('open');
+    document.body.style.overflow='';
+  }));
+}
+
+/* ── SMOOTH LINKS ────────────────────────────── */
+function initLinks(){
+  document.querySelectorAll('a[href^="#"]').forEach(a=>{
+    a.addEventListener('click',e=>{
+      const id=a.getAttribute('href');
+      if(id&&id!=='#'){
+        const t=document.querySelector(id);
+        if(t&&window._lenis){e.preventDefault();window._lenis.scrollTo(t);}
+      }
+    });
+  });
+}
+
+/* ── REVEAL ──────────────────────────────────── */
+function initReveal(){
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(en=>{if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});
+  },{threshold:.1});
+  document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+}
+
+/* ── MAIN ────────────────────────────────────── */
+async function init(){
+  setupCanvas();
+  await loadFrames();
+  if(ST.frames[0])drawFrame(0);
+  initScrub();
+  initMenu();
+  initLinks();
+  initReveal();
+}
+document.readyState==='loading'
+  ? document.addEventListener('DOMContentLoaded',init)
+  : init();
+</script>
+</body>
+</html>
