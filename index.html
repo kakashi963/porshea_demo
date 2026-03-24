@@ -985,7 +985,7 @@ let lenis;
 
 /* ── HELPERS ─────────────────────────────────── */
 function pad(n){return String(n).padStart(CFG.pad,'0');}
-function fp(n){return`./`+CFG.prefix+pad(n)+CFG.ext;}
+function fp(n){return`./frame/`+CFG.prefix+pad(n)+CFG.ext;}
 function setProgress(p){
   document.getElementById('ldFill').style.width=p+'%';
   document.getElementById('ldPct').textContent=Math.round(p)+'%';
